@@ -1,6 +1,9 @@
 const canvas = document.getElementById("canvas")
 const ctx = canvas.getContext("2d")
 
+// ω2' =  	2 sin(θ1-θ2) (ω12 L1 (m1 + m2) + g(m1 + m2) cos θ1 + ω22 L2 m2 cos(θ1 - θ2))/L2 (2 m1 + m2 - m2 cos(2 θ1 - 2 θ2))
+
+
 const PI2 = Math.PI * 2
 const PIhalf = Math.PI / 2
 const PI = Math.PI
@@ -106,9 +109,35 @@ class Ball {
     }
 }
 
+class HangingBall extends Ball {
+    constructor(x, y, r, mass, hangTarget) {
+        super(x, y, r, mass, hangTarget.pos)
+        this.hangTarget = hangTarget
+    }
+    get length1() {
+        return this.hangTarget.length
+    }
+    get seta1() {
+        return this.hangTarget.seta
+    }
+    move() {
+        let rad = this.seta1 - this.seta
+        let w1 = this.hangTarget.angularVelocity
+
+        let acceleration = 2 * sin(this.seta1-this.seta) * (w1 ** 2 * this.length1 * (this.hangTarget.mass + this.mass) + G * (this.hangTarget.mass + this.mass) * cos(this.seta1) + this.angularVelocity ** 2 * this.length * this.mass * cos(this.seta1 - this.seta))
+        acceleration /= this.length * (2 * this.hangTarget.mass + this.mass - this.mass * cos(2 * this.seta1 - 2 * this.seta))
+
+        this.angularAcceleration = acceleration / 15
+        this.angularVelocity += this.angularAcceleration;
+        this.seta += this.angularVelocity;
+        this.pos.x = this.length * Math.sin(this.seta) + this.O.x
+        this.pos.y = this.length * Math.cos(this.seta) + this.O.y
+    }
+}
+
 
 let ball = new Ball(Center.x + 100, Center.y + 100, 10, 1, Center)
-let ball2 = new Ball(ball.x + 100, ball.y + 100, 10, 1, ball.pos)
+let ball2 = new HangingBall(ball.x + 100, ball.y + 100, 10, 1, ball)
 let drawmove_seta = 0
 
 function render() {
@@ -135,7 +164,6 @@ canvas.addEventListener("mousedown", (event) => {
 })
 
 canvas.addEventListener("mouseup", (event) => {
-    print("A")
     if (ball.isMouseDown) {
         ball.Init()
     }
